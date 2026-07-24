@@ -50,6 +50,20 @@
     .entry-hours { background:var(--green-bg); border:1px solid var(--green-dim); border-radius:20px; padding:3px 12px; font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--green); font-weight:500; }
     .entry-project { font-size:15px; font-weight:500; margin-bottom:4px; }
     .entry-notes { font-size:13px; color:var(--muted); line-height:1.5; }
+    /* EDIT FORM */
+    .entry-card.editing { border-color:var(--green); background:var(--surface2,#1e2420); }
+    .edit-hint { font-size:11px; color:var(--muted); font-family:"IBM Plex Mono",monospace; letter-spacing:0.06em; margin-top:6px; }
+    .edit-form { margin-top:12px; border-top:1px solid var(--border); padding-top:12px; display:flex; flex-direction:column; gap:10px; }
+    .edit-label { font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--label); margin-bottom:4px; display:block; }
+    .edit-input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:"IBM Plex Sans",sans-serif; font-size:15px; padding:10px 12px; outline:none; appearance:none; -webkit-appearance:none; }
+    .edit-input:focus { border-color:var(--green); }
+    .edit-actions { display:flex; gap:8px; margin-top:4px; }
+    .btn-save { flex:1; background:var(--green); color:#0f1110; border:none; border-radius:8px; padding:12px; font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+    .btn-save:disabled { opacity:0.4; }
+    .btn-cancel { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px; color:var(--muted); font-family:"IBM Plex Mono",monospace; font-size:13px; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+    .edit-status { font-size:12px; margin-top:4px; min-height:16px; }
+    .edit-status.ok  { color:var(--green); }
+    .edit-status.err { color:var(--red); }
     .grand-total { margin-top:24px; margin-bottom:8px; background:var(--surface); border:1px solid var(--green-dim); border-radius:8px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; }
     .grand-total-label { font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:var(--label); }
     .grand-total-val { font-family:'IBM Plex Mono',monospace; font-size:20px; font-weight:600; color:var(--green); }
@@ -273,7 +287,9 @@
 
   function renderList() {
     var months = {};
-    allData.forEach(function(row) {
+    // Track global index for each row so we can reference allData[i] on edit
+    allData.forEach(function(row, i) {
+      row._idx = i;
       var key = row.date.substring(0,7);
       if (!months[key]) months[key] = [];
       months[key].push(row);
@@ -287,19 +303,126 @@
       var d   = new Date(key + '-02');
       var lbl = d.toLocaleDateString('en-US', { month:'long', year:'numeric' });
       html += '<div class="month-block">';
-      html += '<div class="month-header"><span>' + lbl + '</span><span class="month-total">' + mt.toFixed(1) + ' hrs</span></div>';
+      html += '<div class="month-header"><span>' + lbl + '</span><span class="month-total" id="mt-'+key+'">' + mt.toFixed(1) + ' hrs</span></div>';
       rows.slice().reverse().forEach(function(row) {
-        var dl = new Date(row.date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
-        html += '<div class="entry-card">';
-        html += '<div class="entry-top"><span class="entry-date">' + dl + '</span><span class="entry-hours">' + row.hours.toFixed(1) + ' hrs</span></div>';
-        html += '<div class="entry-project">' + esc(row.project) + '</div>';
-        if (row.notes && row.notes !== '—') html += '<div class="entry-notes">' + esc(row.notes) + '</div>';
+        var dl  = new Date(row.date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+        var idx = row._idx;
+        html += '<div class="entry-card" id="card-'+idx+'" data-idx="'+idx+'">';
+        html += '<div class="entry-top"><span class="entry-date" id="edate-'+idx+'">'+dl+'</span><span class="entry-hours" id="ehrs-'+idx+'">'+row.hours.toFixed(1)+' hrs</span></div>';
+        html += '<div class="entry-project" id="eproj-'+idx+'">'+esc(row.project)+'</div>';
+        if (row.notes && row.notes !== '—') html += '<div class="entry-notes" id="enotes-'+idx+'">'+esc(row.notes)+'</div>';
+        html += '<div class="edit-hint">Tap to edit</div>';
+        html += '<div class="edit-form" id="eform-'+idx+'" style="display:none;">';
+        html += '<div><span class="edit-label">Date</span><input class="edit-input" id="ef-date-'+idx+'" type="date" value="'+row.date+'"></div>';
+        html += '<div><span class="edit-label">Project</span><input class="edit-input" id="ef-proj-'+idx+'" type="text" value="'+esc(row.project)+'"></div>';
+        html += '<div><span class="edit-label">Hours</span><input class="edit-input" id="ef-hrs-'+idx+'" type="number" min="0.5" max="24" step="0.5" value="'+row.hours+'"></div>';
+        html += '<div><span class="edit-label">Notes</span><input class="edit-input" id="ef-notes-'+idx+'" type="text" value="'+(row.notes==='—'?'':esc(row.notes))+'"></div>';
+        html += '<div class="edit-actions"><button class="btn-cancel" onclick="closeEdit('+idx+')">Cancel</button><button class="btn-save" id="esave-'+idx+'" onclick="saveEdit('+idx+')">Save</button></div>';
+        html += '<div class="edit-status" id="estatus-'+idx+'"></div>';
+        html += '</div>';
         html += '</div>';
       });
       html += '</div>';
     });
-    html += '<div class="grand-total"><span class="grand-total-label">ALL TIME TOTAL</span><span class="grand-total-val">' + grandTotal.toFixed(1) + ' hrs</span></div>';
+    html += '<div class="grand-total"><span class="grand-total-label">ALL TIME TOTAL</span><span class="grand-total-val" id="grandTotal">'+grandTotal.toFixed(1)+' hrs</span></div>';
     listView.innerHTML = html;
+
+    // Attach tap listeners to cards
+    document.querySelectorAll('.entry-card').forEach(function(card) {
+      card.addEventListener('click', function(e) {
+        // Don't trigger if clicking inside the edit form
+        if (e.target.closest('.edit-form') || e.target.closest('.edit-form') !== null) return;
+        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+        var idx = parseInt(card.getAttribute('data-idx'), 10);
+        toggleEdit(idx);
+      });
+    });
+  }
+
+  function toggleEdit(idx) {
+    var form = document.getElementById('eform-'+idx);
+    var card = document.getElementById('card-'+idx);
+    if (form.style.display === 'none') {
+      form.style.display = 'flex';
+      card.classList.add('editing');
+    } else {
+      closeEdit(idx);
+    }
+  }
+
+  function closeEdit(idx) {
+    document.getElementById('eform-'+idx).style.display = 'none';
+    document.getElementById('card-'+idx).classList.remove('editing');
+    document.getElementById('estatus-'+idx).textContent = '';
+  }
+
+  function saveEdit(idx) {
+    var row     = allData[idx];
+    var newDate = document.getElementById('ef-date-'+idx).value;
+    var newProj = document.getElementById('ef-proj-'+idx).value.trim();
+    var newHrs  = parseFloat(document.getElementById('ef-hrs-'+idx).value);
+    var newNotes= document.getElementById('ef-notes-'+idx).value.trim() || '—';
+    var statusEl= document.getElementById('estatus-'+idx);
+    var saveBtn = document.getElementById('esave-'+idx);
+
+    if (!newDate || !newProj || isNaN(newHrs) || newHrs <= 0) {
+      statusEl.textContent = 'Please fill in all required fields.';
+      statusEl.className   = 'edit-status err';
+      return;
+    }
+
+    saveBtn.disabled     = true;
+    saveBtn.textContent  = 'Saving…';
+    statusEl.textContent = '';
+
+    // Send edit via JSONP
+    var existing = document.getElementById('jsonp-edit');
+    if (existing) existing.parentNode.removeChild(existing);
+
+    window._tsEditCallback = function(json) {
+      var el = document.getElementById('jsonp-edit');
+      if (el) el.parentNode.removeChild(el);
+      saveBtn.disabled    = false;
+      saveBtn.textContent = 'Save';
+      if (json.status === 'ok') {
+        // Update local data
+        row.date    = newDate;
+        row.project = newProj;
+        row.hours   = newHrs;
+        row.notes   = newNotes;
+        // Re-render list to reflect changes
+        renderList();
+      } else {
+        statusEl.textContent = 'Save failed. Please try again.';
+        statusEl.className   = 'edit-status err';
+      }
+    };
+
+    var payload = {
+      action:   'editEntry',
+      name:     nameSelect.value,
+      origDate: row.date,
+      origProj: row.project,
+      newDate:  newDate,
+      newProj:  newProj,
+      newHrs:   newHrs,
+      newNotes: newNotes
+    };
+
+    var qs = Object.keys(payload).map(function(k) {
+      return encodeURIComponent(k) + '=' + encodeURIComponent(payload[k]);
+    }).join('&');
+
+    var s  = document.createElement('script');
+    s.id   = 'jsonp-edit';
+    s.src  = SCRIPT_URL + '?' + qs + '&callback=_tsEditCallback&_t=' + Date.now();
+    s.onerror = function() {
+      saveBtn.disabled    = false;
+      saveBtn.textContent = 'Save';
+      statusEl.textContent = 'Connection error. Try again.';
+      statusEl.className   = 'edit-status err';
+    };
+    document.head.appendChild(s);
   }
 
   function renderCalendar() {

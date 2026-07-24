@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>My Hours</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0f1110;
+      --surface:  #181c1a;
+      --surface2: #1e2420;
+      --border:   #2a302c;
+      --muted:    #4a544e;
+      --text:     #e2e8e4;
+      --label:    #7a8c80;
+      --green:    #4ade80;
+      --green-dim:#2d6b47;
+      --green-bg: rgba(74,222,128,0.10);
+      --input-bg: #1e2420;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .shell { max-width: 480px; margin: 0 auto; padding-bottom: 60px; }
+
+    /* ── Top bar ── */
+    .topbar {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+      position: sticky; top: 0;
+      background: var(--bg); z-index: 10;
+    }
+
+    .back-btn {
+      width: 34px; height: 34px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation; text-decoration: none;
+    }
+
+    .back-btn svg { width: 16px; height: 16px; }
+
+    .topbar-text { flex: 1; }
+
+    .topbar-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 600; font-size: 15px; letter-spacing: 0.02em;
+    }
+
+    .topbar-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+    /* ── Name picker ── */
+    .name-section { padding: 24px 24px 0; }
+
+    label.field-label {
+      display: block;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px; font-weight: 500;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--label); margin-bottom: 8px;
+    }
+
+    select {
+      width: 100%; background: var(--input-bg);
+      border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 16px; padding: 14px 16px;
+      outline: none; appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a544e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 16px center;
+      padding-right: 44px;
+    }
+
+    select:focus { border-color: var(--green); outline: none; }
+    select option { background: var(--surface); }
+
+    /* ── View toggle ── */
+    .view-toggle {
+      display: flex; gap: 8px;
+      padding: 16px 24px 0;
+    }
+
+    .toggle-btn {
+      flex: 1; padding: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+      letter-spacing: 0.06em; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation; transition: all 0.15s;
+    }
+
+    .toggle-btn.active {
+      background: var(--green); border-color: var(--green);
+      color: #0f1110; font-weight: 600;
+    }
+
+    /* ── Loading / empty states ── */
+    .state-msg {
+      text-align: center; padding: 60px 24px;
+      color: var(--muted); font-size: 15px; line-height: 1.6;
+    }
+
+    .state-msg .icon { font-size: 36px; margin-bottom: 12px; }
+
+    /* ══════════════════════════════
+       LIST VIEW
+    ══════════════════════════════ */
+    #listView { display: none; padding: 0 24px; }
+
+    .month-block { margin-top: 28px; }
+
+    .month-header {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--green); margin-bottom: 10px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .month-total {
+      background: var(--green-bg);
+      border: 1px solid var(--green-dim);
+      border-radius: 4px; padding: 3px 10px;
+      font-size: 12px; color: var(--green);
+    }
+
+    .entry-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px 16px;
+      margin-bottom: 8px;
+    }
+
+    .entry-top {
+      display: flex; justify-content: space-between;
+      align-items: flex-start; margin-bottom: 6px;
+    }
+
+    .entry-date {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px; color: var(--label);
+    }
+
+    .entry-hours {
+      background: var(--green-bg);
+      border: 1px solid var(--green-dim);
+      border-radius: 20px; padding: 3px 12px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px; color: var(--green); font-weight: 500;
+    }
+
+    .entry-project {
+      font-size: 15px; font-weight: 500; margin-bottom: 4px;
+    }
+
+    .entry-notes {
+      font-size: 13px; color: var(--muted); line-height: 1.5;
+    }
+
+    .grand-total {
+      margin-top: 24px; margin-bottom: 8px;
+      background: var(--surface);
+      border: 1px solid var(--green-dim);
+      border-radius: 8px; padding: 16px 20px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .grand-total-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--label);
+    }
+
+    .grand-total-val {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 20px; font-weight: 600; color: var(--green);
+    }
+
+    /* ══════════════════════════════
+       CALENDAR VIEW
+    ══════════════════════════════ */
+    #calView { display: none; padding: 0 24px; }
+
+    .cal-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 0 14px;
+    }
+
+    .cal-nav-btn {
+      width: 36px; height: 36px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text);
+      -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+    }
+
+    .cal-nav-btn svg { width: 16px; height: 16px; }
+
+    .cal-month-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 14px; font-weight: 600; letter-spacing: 0.06em;
+    }
+
+    .cal-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    .cal-dow {
+      text-align: center;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px; letter-spacing: 0.1em;
+      color: var(--muted); padding: 4px 0 8px;
+    }
+
+    .cal-cell {
+      aspect-ratio: 1;
+      border-radius: 6px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-size: 14px; position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      cursor: default;
+      transition: all 0.12s;
+    }
+
+    .cal-cell.empty {
+      background: transparent; border-color: transparent;
+    }
+
+    .cal-cell.has-entry {
+      background: var(--green-bg);
+      border-color: var(--green-dim);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .cal-cell.has-entry:active { opacity: 0.7; }
+
+    .cal-cell.today {
+      border-color: var(--green);
+    }
+
+    .cal-day { font-size: 14px; line-height: 1; }
+
+    .cal-hrs {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px; color: var(--green); margin-top: 2px;
+      font-weight: 600;
+    }
+
+    .cal-month-total {
+      margin-top: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px 16px;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 14px;
+    }
+
+    .cal-month-total-label { color: var(--label); font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.08em; }
+    .cal-month-total-val   { color: var(--green); font-family: 'IBM Plex Mono', monospace; font-size: 16px; font-weight: 600; }
+
+    /* ── Day detail popup ── */
+    .popup-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7); z-index: 50;
+      align-items: flex-end; justify-content: center;
+    }
+
+    .popup-backdrop.visible { display: flex; }
+
+    .popup {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px 16px 0 0;
+      padding: 24px 24px 40px;
+      width: 100%; max-width: 480px;
+    }
+
+    .popup-date {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--green); margin-bottom: 16px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .popup-close {
+      width: 28px; height: 28px;
+      background: var(--border); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 16px; color: var(--muted);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .popup-entry {
+      border-bottom: 1px solid var(--border); padding: 12px 0;
+    }
+
+    .popup-entry:last-child { border-bottom: none; }
+
+    .popup-entry-top {
+      display: flex; justify-content: space-between; margin-bottom: 4px;
+    }
+
+    .popup-project { font-size: 16px; font-weight: 500; }
+
+    .popup-hrs {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 14px; color: var(--green); font-weight: 600;
+    }
+
+    .popup-notes { font-size: 14px; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <a class="back-btn" href="index.html">
+      <svg viewBox="0 0 16 16" fill="none">
+        <path d="M10 3L5 8l5 5" stroke="#e2e8e4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+    <div class="topbar-text">
+      <div class="topbar-title">MY HOURS</div>
+      <div class="topbar-sub">View your timesheet history</div>
+    </div>
+  </div>
+
+  <!-- Name picker -->
+  <div class="name-section">
+    <label class="field-label">Select Your Name</label>
+    <select id="nameSelect">
+      <option value="">— Select your name —</option>
+      <!-- ✏️ Keep in sync with index.html employee names -->
+      <option>Kim</option>
+      <option>Alex</option>
+      <option>Ava</option>
+      <option>Chris</option>
+    </select>
+  </div>
+
+  <!-- View toggle -->
+  <div class="view-toggle">
+    <button class="toggle-btn active" id="btnList">☰ List</button>
+    <button class="toggle-btn" id="btnCal">📅 Calendar</button>
+  </div>
+
+  <!-- State messages -->
+  <div class="state-msg" id="stateMsg">
+    <div class="icon">👆</div>
+    Select your name above to see your hours.
+  </div>
+
+  <!-- LIST VIEW -->
+  <div id="listView"></div>
+
+  <!-- CALENDAR VIEW -->
+  <div id="calView">
+    <div class="cal-nav">
+      <button class="cal-nav-btn" id="calPrev">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="#e2e8e4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="cal-month-label" id="calMonthLabel"></div>
+      <button class="cal-nav-btn" id="calNext">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="#e2e8e4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-month-total">
+      <span class="cal-month-total-label">MONTH TOTAL</span>
+      <span class="cal-month-total-val" id="calMonthTotal">0 hrs</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Day detail popup -->
+<div class="popup-backdrop" id="popup">
+  <div class="popup">
+    <div class="popup-date">
+      <span id="popupDate"></span>
+      <div class="popup-close" id="popupClose">✕</div>
+    </div>
+    <div id="popupEntries"></div>
+  </div>
+</div>
+
+<script>
+  // ══════════════════════════════════════════════════
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxiyScahVp4QWhHH-WUK057bSD_ytGl29Y6SG7NAnwdgQeSoxKposrravVGPVfrlYcZ/exec";
+  // ══════════════════════════════════════════════════
+
+  let allData    = [];
+  let calYear    = new Date().getFullYear();
+  let calMonth   = new Date().getMonth(); // 0-indexed
+
+  const nameSelect  = document.getElementById('nameSelect');
+  const stateMsg    = document.getElementById('stateMsg');
+  const listView    = document.getElementById('listView');
+  const calView     = document.getElementById('calView');
+  const btnList     = document.getElementById('btnList');
+  const btnCal      = document.getElementById('btnCal');
+  const popup       = document.getElementById('popup');
+  const popupClose  = document.getElementById('popupClose');
+
+  // View toggle
+  btnList.addEventListener('click', function() {
+    btnList.classList.add('active');
+    btnCal.classList.remove('active');
+    if (allData.length) {
+      listView.style.display = 'block';
+      calView.style.display  = 'none';
+      stateMsg.style.display = 'none';
+    }
+  });
+
+  btnCal.addEventListener('click', function() {
+    btnCal.classList.add('active');
+    btnList.classList.remove('active');
+    if (allData.length) {
+      calView.style.display  = 'block';
+      listView.style.display = 'none';
+      stateMsg.style.display = 'none';
+      renderCalendar();
+    }
+  });
+
+  // Calendar nav
+  document.getElementById('calPrev').addEventListener('click', function() {
+    calMonth--;
+    if (calMonth < 0) { calMonth = 11; calYear--; }
+    renderCalendar();
+  });
+
+  document.getElementById('calNext').addEventListener('click', function() {
+    calMonth++;
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+    renderCalendar();
+  });
+
+  // Close popup
+  popupClose.addEventListener('click', function() {
+    popup.classList.remove('visible');
+  });
+
+  popup.addEventListener('click', function(e) {
+    if (e.target === popup) popup.classList.remove('visible');
+  });
+
+  // Name change — fetch data
+  nameSelect.addEventListener('change', function() {
+    const name = this.value;
+    if (!name) {
+      allData = [];
+      listView.style.display = 'none';
+      calView.style.display  = 'none';
+      stateMsg.style.display = 'block';
+      stateMsg.innerHTML     = '<div class="icon">👆</div>Select your name above to see your hours.';
+      return;
+    }
+    loadData(name);
+  });
+
+  function loadData(name) {
+    stateMsg.style.display = 'block';
+    stateMsg.innerHTML     = '<div class="icon">⏳</div>Loading your hours…';
+    listView.style.display = 'none';
+    calView.style.display  = 'none';
+
+    // Remove any previous JSONP script tag
+    var old = document.getElementById('jsonp-script');
+    if (old) old.parentNode.removeChild(old);
+
+    // JSONP callback — avoids CORS issues with Google Apps Script
+    window.timesheetCallback = function(json) {
+      if (json.status === 'ok') {
+        allData = json.rows;
+        if (allData.length === 0) {
+          stateMsg.innerHTML = '<div class="icon">📭</div>No hours found yet. Submit some time first!';
+          stateMsg.style.display = 'block';
+          return;
+        }
+        stateMsg.style.display = 'none';
+        // Set calendar to month of most recent entry
+        var lastDate = new Date(allData[allData.length - 1].date);
+        calYear  = lastDate.getFullYear();
+        calMonth = lastDate.getMonth();
+
+        if (btnList.classList.contains('active')) {
+          renderList();
+          listView.style.display = 'block';
+        } else {
+          renderCalendar();
+          calView.style.display = 'block';
+        }
+      } else {
+        stateMsg.innerHTML = '<div class="icon">⚠️</div>Error loading data. Please try again.';
+        stateMsg.style.display = 'block';
+      }
+    };
+
+    var url    = SCRIPT_URL + '?action=getHistory&name=' + encodeURIComponent(name) + '&callback=timesheetCallback';
+    var script = document.createElement('script');
+    script.id  = 'jsonp-script';
+    script.src = url;
+    script.onerror = function() {
+      stateMsg.innerHTML = '<div class="icon">⚠️</div>Could not load data. Check your connection and try again.';
+      stateMsg.style.display = 'block';
+    };
+    document.body.appendChild(script);
+  }
+
+  // ── LIST VIEW ────────────────────────────────────
+  function renderList() {
+    // Group by month
+    const months = {};
+    allData.forEach(function(row) {
+      const key = row.date.substring(0, 7); // YYYY-MM
+      if (!months[key]) months[key] = [];
+      months[key].push(row);
+    });
+
+    let grandTotal = 0;
+    let html = '';
+
+    Object.keys(months).sort().reverse().forEach(function(key) {
+      const rows        = months[key];
+      const monthTotal  = rows.reduce(function(s, r) { return s + r.hours; }, 0);
+      grandTotal       += monthTotal;
+
+      const d     = new Date(key + '-02');
+      const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+      html += '<div class="month-block">';
+      html += '<div class="month-header"><span>' + label + '</span><span class="month-total">' + monthTotal.toFixed(1) + ' hrs</span></div>';
+
+      rows.slice().reverse().forEach(function(row) {
+        const dateLabel = new Date(row.date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+        html += '<div class="entry-card">';
+        html += '<div class="entry-top"><span class="entry-date">' + dateLabel + '</span><span class="entry-hours">' + row.hours.toFixed(1) + ' hrs</span></div>';
+        html += '<div class="entry-project">' + escHtml(row.project) + '</div>';
+        if (row.notes && row.notes !== '—') {
+          html += '<div class="entry-notes">' + escHtml(row.notes) + '</div>';
+        }
+        html += '</div>';
+      });
+
+      html += '</div>';
+    });
+
+    html += '<div class="grand-total"><span class="grand-total-label">ALL TIME TOTAL</span><span class="grand-total-val">' + grandTotal.toFixed(1) + ' hrs</span></div>';
+
+    listView.innerHTML = html;
+  }
+
+  // ── CALENDAR VIEW ─────────────────────────────────
+  function renderCalendar() {
+    const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const DAYS   = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+    document.getElementById('calMonthLabel').textContent = MONTHS[calMonth] + ' ' + calYear;
+
+    // Build a map of date → entries for this month
+    const prefix   = calYear + '-' + String(calMonth + 1).padStart(2, '0');
+    const dayMap   = {};
+    let   monthTotal = 0;
+
+    allData.forEach(function(row) {
+      if (row.date.startsWith(prefix)) {
+        const day = parseInt(row.date.substring(8, 10), 10);
+        if (!dayMap[day]) dayMap[day] = [];
+        dayMap[day].push(row);
+        monthTotal += row.hours;
+      }
+    });
+
+    document.getElementById('calMonthTotal').textContent = monthTotal.toFixed(1) + ' hrs';
+
+    // Build calendar grid
+    const firstDay  = new Date(calYear, calMonth, 1).getDay();
+    const daysInMon = new Date(calYear, calMonth + 1, 0).getDate();
+    const today     = new Date();
+
+    let html = '';
+
+    // Day-of-week headers
+    DAYS.forEach(function(d) {
+      html += '<div class="cal-dow">' + d + '</div>';
+    });
+
+    // Empty cells before first day
+    for (let i = 0; i < firstDay; i++) {
+      html += '<div class="cal-cell empty"></div>';
+    }
+
+    // Day cells
+    for (let d = 1; d <= daysInMon; d++) {
+      const hasEntry = !!dayMap[d];
+      const isToday  = today.getFullYear() === calYear && today.getMonth() === calMonth && today.getDate() === d;
+      const dayHrs   = hasEntry ? dayMap[d].reduce(function(s, r) { return s + r.hours; }, 0) : 0;
+
+      let cls = 'cal-cell';
+      if (hasEntry) cls += ' has-entry';
+      if (isToday)  cls += ' today';
+
+      const dataAttr = hasEntry ? ' data-day="' + d + '"' : '';
+
+      html += '<div class="' + cls + '"' + dataAttr + '>';
+      html += '<span class="cal-day">' + d + '</span>';
+      if (hasEntry) html += '<span class="cal-hrs">' + dayHrs.toFixed(0) + 'h</span>';
+      html += '</div>';
+    }
+
+    document.getElementById('calGrid').innerHTML = html;
+
+    // Attach tap listeners to days with entries
+    document.querySelectorAll('.cal-cell.has-entry').forEach(function(cell) {
+      cell.addEventListener('click', function() {
+        const day     = parseInt(this.getAttribute('data-day'), 10);
+        const entries = dayMap[day];
+        showDayPopup(calYear, calMonth, day, entries);
+      });
+    });
+  }
+
+  function showDayPopup(year, month, day, entries) {
+    const dateLabel = new Date(year, month, day).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+    document.getElementById('popupDate').textContent = dateLabel;
+
+    let html = '';
+    entries.forEach(function(row) {
+      html += '<div class="popup-entry">';
+      html += '<div class="popup-entry-top"><span class="popup-project">' + escHtml(row.project) + '</span><span class="popup-hrs">' + row.hours.toFixed(1) + ' hrs</span></div>';
+      if (row.notes && row.notes !== '—') {
+        html += '<div class="popup-notes">' + escHtml(row.notes) + '</div>';
+      }
+      html += '</div>';
+    });
+
+    document.getElementById('popupEntries').innerHTML = html;
+    popup.classList.add('visible');
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>

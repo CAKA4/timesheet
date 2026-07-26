@@ -332,6 +332,16 @@
         <option value="">— Loading projects… —</option>
       </select>
       <div class="field-error" id="err-project">Please select a project.</div>
+      <!-- Add new project inline -->
+      <div id="addProjWrap" style="display:none; margin-top:10px; display:none;">
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="newProjName" placeholder="New project name" maxlength="80"
+            style="flex:1; background:var(--input-bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'IBM Plex Sans',sans-serif; font-size:15px; padding:11px 14px; outline:none; -webkit-appearance:none;">
+          <button id="saveProjBtn" style="background:var(--green);color:#0f1110;border:none;border-radius:8px;padding:11px 14px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;flex-shrink:0;">Add</button>
+          <button id="cancelProjBtn" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 12px;font-family:'IBM Plex Mono',monospace;font-size:13px;cursor:pointer;color:var(--muted);touch-action:manipulation;-webkit-tap-highlight-color:transparent;flex-shrink:0;">✕</button>
+        </div>
+        <div id="addProjStatus" style="font-size:12px;margin-top:6px;min-height:16px;"></div>
+      </div>
     </div>
 
     <div class="field-group">
@@ -407,25 +417,77 @@
   let lastPayload = null;
 
   // ── Load projects into dropdown ──
-  (function loadProjects() {
+  function loadProjects() {
     var old = document.getElementById('jsonp-projects');
     if (old) old.parentNode.removeChild(old);
     window._projCb = function(json) {
-      var sel = document.getElementById('project');
+      var sel  = document.getElementById('project');
+      var prev = sel.value;
       if (json.status === 'ok' && json.projects.length > 0) {
         sel.innerHTML = '<option value="">— Select a project —</option>' +
           json.projects.map(function(p) {
             return '<option value="' + p.replace(/"/g,'&quot;') + '">' + p + '</option>';
-          }).join('');
+          }).join('') +
+          '<option value="__add__">➕ Add new project…</option>';
       } else {
-        sel.innerHTML = '<option value="">— No projects yet —</option>';
+        sel.innerHTML = '<option value="">— No projects yet —</option><option value="__add__">➕ Add new project…</option>';
       }
+      if (prev && prev !== '__add__') sel.value = prev;
     };
     var s = document.createElement('script');
     s.id  = 'jsonp-projects';
     s.src = SCRIPT_URL + '?action=getProjects&callback=_projCb&_t=' + Date.now();
     document.head.appendChild(s);
-  })();
+  }
+  loadProjects();
+
+  // Handle "Add new project" selection
+  document.getElementById('project').addEventListener('change', function() {
+    if (this.value === '__add__') {
+      this.value = '';
+      document.getElementById('addProjWrap').style.display = 'block';
+      document.getElementById('newProjName').focus();
+    }
+  });
+
+  document.getElementById('saveProjBtn').addEventListener('click', function() {
+    var name     = document.getElementById('newProjName').value.trim();
+    var statusEl = document.getElementById('addProjStatus');
+    var btn      = document.getElementById('saveProjBtn');
+    if (!name) { statusEl.textContent = 'Enter a project name.'; statusEl.style.color = 'var(--red)'; return; }
+    btn.disabled = true;
+    statusEl.textContent = '';
+    var old = document.getElementById('jsonp-addproj');
+    if (old) old.parentNode.removeChild(old);
+    window._addProjCb = function(json) {
+      btn.disabled = false;
+      if (json.status === 'ok') {
+        statusEl.textContent = '✓ Added!'; statusEl.style.color = 'var(--green)';
+        document.getElementById('newProjName').value = '';
+        document.getElementById('addProjWrap').style.display = 'none';
+        loadProjects();
+        // Auto-select the new project after reload
+        setTimeout(function() {
+          var sel = document.getElementById('project');
+          for (var i = 0; i < sel.options.length; i++) {
+            if (sel.options[i].value === name) { sel.value = name; break; }
+          }
+        }, 1500);
+      } else {
+        statusEl.textContent = '✕ ' + (json.message || 'Error'); statusEl.style.color = 'var(--red)';
+      }
+    };
+    var s = document.createElement('script');
+    s.id  = 'jsonp-addproj';
+    s.src = SCRIPT_URL + '?action=addProject&name=' + encodeURIComponent(name) + '&callback=_addProjCb&_t=' + Date.now();
+    document.head.appendChild(s);
+  });
+
+  document.getElementById('cancelProjBtn').addEventListener('click', function() {
+    document.getElementById('addProjWrap').style.display = 'none';
+    document.getElementById('newProjName').value = '';
+    document.getElementById('addProjStatus').textContent = '';
+  });
 
   // Set today's date
   const fmt = d => d.toLocaleDateString('en-CA');

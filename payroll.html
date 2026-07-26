@@ -15,11 +15,11 @@
       --green:#4ade80; --green-dim:#2d6b47; --green-bg:rgba(74,222,128,0.10);
       --red:#f87171; --red-bg:rgba(248,113,113,0.10);
       --amber:#fbbf24; --amber-bg:rgba(251,191,36,0.10);
+      --blue:#60a5fa;
     }
     html,body { min-height:100%; background:var(--bg); color:var(--text); font-family:'IBM Plex Sans',sans-serif; font-size:16px; -webkit-font-smoothing:antialiased; }
     .shell { max-width:480px; margin:0 auto; padding-bottom:60px; }
 
-    /* Topbar */
     .topbar { padding:20px 24px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; position:sticky; top:0; background:var(--bg); z-index:10; }
     .back-btn { width:34px; height:34px; background:var(--surface); border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; -webkit-tap-highlight-color:transparent; }
     .back-btn svg { width:16px; height:16px; }
@@ -27,61 +27,72 @@
     .topbar-title { font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:15px; letter-spacing:0.02em; }
     .topbar-sub { font-size:12px; color:var(--muted); margin-top:1px; }
 
-    /* Mark payroll section */
-    .mark-section { margin:24px 24px 0; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; }
-    .mark-title { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--label); margin-bottom:14px; }
-    .pin-row { display:flex; gap:8px; }
-    .pin-input { flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:18px; letter-spacing:0.2em; padding:13px 16px; outline:none; appearance:none; -webkit-appearance:none; }
-    .pin-input:focus { border-color:var(--green); }
-    .btn-mark { background:var(--green); color:#0f1110; border:none; border-radius:8px; padding:13px 20px; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; touch-action:manipulation; -webkit-tap-highlight-color:transparent; flex-shrink:0; }
+    /* Section wrapper */
+    .section { margin:20px 24px 0; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; }
+    .section-title { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--label); margin-bottom:14px; }
+
+    /* Mark payroll */
+    .btn-mark { width:100%; background:var(--green); color:#0f1110; border:none; border-radius:8px; padding:14px; font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:600; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
     .btn-mark:disabled { opacity:0.4; }
     .mark-status { margin-top:10px; font-size:13px; min-height:18px; }
     .mark-status.ok  { color:var(--green); }
     .mark-status.err { color:var(--red); }
 
-    /* Period cards */
-    .periods-section { padding:0 24px; margin-top:28px; }
-    .section-label { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--label); margin-bottom:14px; }
+    /* Cutoff list */
+    .cutoff-list { display:flex; flex-direction:column; gap:8px; margin-top:14px; }
+    .cutoff-item { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:12px 14px; }
+    .cutoff-view { display:flex; justify-content:space-between; align-items:center; }
+    .cutoff-date { font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--text); }
+    .cutoff-actions { display:flex; gap:6px; }
+    .btn-icon { background:none; border:1px solid var(--border); border-radius:6px; padding:5px 10px; font-size:12px; cursor:pointer; color:var(--muted); touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+    .btn-icon:hover { border-color:var(--text); color:var(--text); }
+    .btn-icon.del:hover { border-color:var(--red); color:var(--red); }
 
+    .cutoff-edit-form { display:none; margin-top:10px; border-top:1px solid var(--border); padding-top:10px; }
+    .cutoff-edit-form.visible { display:block; }
+    .cutoff-edit-row { display:flex; gap:8px; }
+    .cutoff-input { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:13px; padding:9px 12px; outline:none; -webkit-appearance:none; }
+    .cutoff-input:focus { border-color:var(--green); }
+    .btn-save-cutoff { background:var(--green); color:#0f1110; border:none; border-radius:6px; padding:9px 14px; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; cursor:pointer; touch-action:manipulation; white-space:nowrap; }
+    .cutoff-status { font-size:12px; margin-top:6px; min-height:14px; }
+    .cutoff-status.ok  { color:var(--green); }
+    .cutoff-status.err { color:var(--red); }
+
+    /* Projects */
+    .projects-list { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+    .project-item { display:flex; justify-content:space-between; align-items:center; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; font-size:15px; }
+    .add-row { display:flex; gap:8px; }
+    .add-input { flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'IBM Plex Sans',sans-serif; font-size:15px; padding:11px 14px; outline:none; -webkit-appearance:none; }
+    .add-input:focus { border-color:var(--green); }
+    .btn-add { background:var(--surface2); border:1px solid var(--green); color:var(--green); border-radius:8px; padding:11px 16px; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; flex-shrink:0; }
+    .btn-add:disabled { opacity:0.4; }
+    .add-status { font-size:12px; margin-top:6px; min-height:16px; }
+    .add-status.ok  { color:var(--green); }
+    .add-status.err { color:var(--red); }
+
+    /* Period cards */
+    .periods-section { padding:0 24px; margin-top:20px; }
     .period-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; margin-bottom:12px; overflow:hidden; }
     .period-header { padding:14px 18px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
-    .period-header:active { opacity:0.7; }
-    .period-label { font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; color:var(--text); }
+    .period-label { font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; }
     .period-cutoff { font-size:12px; color:var(--muted); margin-top:2px; }
     .period-badge { padding:4px 12px; border-radius:20px; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; }
     .period-badge.open   { background:var(--amber-bg); color:var(--amber); border:1px solid rgba(251,191,36,0.3); }
     .period-badge.closed { background:var(--green-bg); color:var(--green); border:1px solid var(--green-dim); }
-
     .period-body { display:none; border-top:1px solid var(--border); }
     .period-body.visible { display:block; }
-
     .emp-row { display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-bottom:1px solid var(--border); }
     .emp-row:last-child { border-bottom:none; }
     .emp-name { font-size:15px; font-weight:500; }
     .emp-hrs { font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--green); font-weight:600; }
     .emp-hrs.zero { color:var(--muted); }
-
     .period-total { display:flex; justify-content:space-between; padding:12px 18px; background:var(--surface2); border-top:1px solid var(--border); }
     .period-total-label { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--label); }
-    .period-total-val { font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:600; color:var(--text); }
+    .period-total-val { font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:600; }
 
     .state-msg { text-align:center; padding:48px 24px; color:var(--muted); font-size:15px; line-height:1.6; }
     .state-msg .icon { font-size:32px; margin-bottom:10px; }
-
-    /* Projects section */
-    .projects-section { margin:20px 24px 0; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; }
-    .projects-list { margin-top:14px; display:flex; flex-direction:column; gap:6px; }
-    .project-item { display:flex; justify-content:space-between; align-items:center; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; font-size:15px; }
-    .project-item-name { color:var(--text); }
-    .add-project-row { display:flex; gap:8px; margin-top:14px; border-top:1px solid var(--border); padding-top:14px; }
-    .add-project-input { flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'IBM Plex Sans',sans-serif; font-size:15px; padding:11px 14px; outline:none; appearance:none; -webkit-appearance:none; }
-    .add-project-input:focus { border-color:var(--green); }
-    .btn-add-project { background:var(--surface2); border:1px solid var(--green); color:var(--green); border-radius:8px; padding:11px 16px; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; touch-action:manipulation; -webkit-tap-highlight-color:transparent; flex-shrink:0; }
-    .btn-add-project:disabled { opacity:0.4; }
-    .add-project-status { font-size:12px; margin-top:6px; min-height:16px; }
-    .add-project-status.ok  { color:var(--green); }
-    .add-project-status.err { color:var(--red); }
-    .spinner { width:22px; height:22px; border:2px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin 0.8s linear infinite; display:inline-block; vertical-align:middle; margin-right:8px; }
+    .spinner { width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin 0.8s linear infinite; display:inline-block; vertical-align:middle; margin-right:6px; }
     @keyframes spin { to { transform:rotate(360deg); } }
   </style>
 </head>
@@ -99,30 +110,32 @@
   </div>
 
   <!-- Mark payroll -->
-  <div class="mark-section">
-    <div class="mark-title">Mark Payroll Submitted</div>
-    <div class="pin-row">
-      <input class="pin-input" id="pinInput" type="password" maxlength="10" placeholder="PIN" autocomplete="off">
-      <button class="btn-mark" id="markBtn">Submit Payroll</button>
-    </div>
+  <div class="section">
+    <div class="section-title">Mark Payroll Submitted</div>
+    <button class="btn-mark" id="markBtn">Submit Payroll Now</button>
     <div class="mark-status" id="markStatus"></div>
+
+    <!-- Payroll cutoff dates -->
+    <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:16px;">
+      <div class="section-title" style="margin-bottom:10px;">Payroll Cutoff Dates</div>
+      <div id="cutoffList"><div style="color:var(--muted);font-size:14px;"><span class="spinner"></span>Loading…</div></div>
+    </div>
   </div>
 
   <!-- Project management -->
-  <div class="projects-section">
-    <div class="mark-title">Manage Projects</div>
-    <div id="projectsList"><div style="color:var(--muted);font-size:14px;">Loading…</div></div>
-    <div class="add-project-row">
-      <input class="add-project-input" id="newProjectInput" type="text" placeholder="New project name" maxlength="80">
-      <button class="btn-add-project" id="addProjectBtn">+ Add</button>
+  <div class="section">
+    <div class="section-title">Manage Projects</div>
+    <div id="projectsList"><div style="color:var(--muted);font-size:14px;"><span class="spinner"></span>Loading…</div></div>
+    <div class="add-row">
+      <input class="add-input" id="newProjectInput" type="text" placeholder="New project name" maxlength="80">
+      <button class="btn-add" id="addProjectBtn">+ Add</button>
     </div>
-    <div class="add-project-status" id="addProjectStatus"></div>
-    <div style="font-size:12px;color:var(--muted);margin-top:8px;">Requires your PIN above to add projects.</div>
+    <div class="add-status" id="addProjectStatus"></div>
   </div>
 
-  <!-- Payroll periods -->
+  <!-- Pay period summaries -->
   <div class="periods-section">
-    <div class="section-label">Pay Period Summary</div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--label);margin-bottom:14px;">Pay Period Summary</div>
     <div id="periodsContainer">
       <div class="state-msg"><div class="icon"><span class="spinner"></span></div>Loading…</div>
     </div>
@@ -133,48 +146,137 @@
 <script>
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyWJuakrIfHEirLhSih-WGYT3A1etk1wc1I8uYVqrxUDqNyWKl_2lyjpiO4wSKqcrzk/exec";
 
-  // ── Load summary on page open ──
+  // ── On load ──
   loadSummary();
+  loadCutoffs();
+  loadProjects();
 
-  // ── Mark payroll button ──
+  // ── Mark payroll ──
   document.getElementById('markBtn').addEventListener('click', function() {
-    var pin      = document.getElementById('pinInput').value.trim();
-    var statusEl = document.getElementById('markStatus');
     var btn      = document.getElementById('markBtn');
-
-    if (!pin) {
-      statusEl.textContent = 'Please enter your PIN.';
-      statusEl.className   = 'mark-status err';
-      return;
-    }
-
+    var statusEl = document.getElementById('markStatus');
+    if (!confirm('Mark payroll as submitted right now?')) return;
     btn.disabled     = true;
     btn.innerHTML    = '<span class="spinner"></span>Submitting…';
     statusEl.textContent = '';
-
-    jsonp(SCRIPT_URL + '?action=markPayroll&pin=' + encodeURIComponent(pin), '_markCb', function(json) {
-      btn.disabled  = false;
-      btn.textContent = 'Submit Payroll';
+    jsonp(SCRIPT_URL + '?action=addPayrollCutoff', '_markCb', function(json) {
+      btn.disabled    = false;
+      btn.textContent = 'Submit Payroll Now';
       if (json.status === 'ok') {
-        statusEl.textContent = '✓ Payroll marked at ' + json.cutoff.substring(0,10);
+        statusEl.textContent = '✓ Payroll marked at ' + json.cutoff.substring(0,16);
         statusEl.className   = 'mark-status ok';
-        document.getElementById('pinInput').value = '';
-        loadSummary();
+        loadSummary(); loadCutoffs();
       } else {
-        statusEl.textContent = json.message === 'Incorrect PIN' ? '✕ Incorrect PIN' : '✕ Error: ' + json.message;
+        statusEl.textContent = '✕ ' + (json.message || 'Error');
         statusEl.className   = 'mark-status err';
       }
     });
   });
 
+  // ── Load + render cutoff dates ──
+  function loadCutoffs() {
+    jsonp(SCRIPT_URL + '?action=getPayrollCutoffs', '_cutoffsCb', function(json) {
+      var container = document.getElementById('cutoffList');
+      if (json.status !== 'ok' || !json.cutoffs.length) {
+        container.innerHTML = '<div style="color:var(--muted);font-size:14px;">No cutoff dates yet.</div>';
+        return;
+      }
+      container.innerHTML = '<div class="cutoff-list">' +
+        json.cutoffs.map(function(c) {
+          return '<div class="cutoff-item" id="ci-' + c.index + '">' +
+            '<div class="cutoff-view">' +
+            '<span class="cutoff-date">' + c.value.substring(0,16) + '</span>' +
+            '<div class="cutoff-actions">' +
+            '<button class="btn-icon" onclick="toggleCutoffEdit(' + c.index + ')">✏️</button>' +
+            '<button class="btn-icon del" onclick="deleteCutoff(' + c.index + ')">🗑</button>' +
+            '</div></div>' +
+            '<div class="cutoff-edit-form" id="cef-' + c.index + '">' +
+            '<div class="cutoff-edit-row">' +
+            '<input class="cutoff-input" id="cev-' + c.index + '" type="text" value="' + c.value.substring(0,16) + '" placeholder="YYYY-MM-DD HH:MM">' +
+            '<button class="btn-save-cutoff" onclick="saveCutoff(' + c.index + ')">Save</button>' +
+            '</div>' +
+            '<div class="cutoff-status" id="ces-' + c.index + '"></div>' +
+            '</div>' +
+            '</div>';
+        }).join('') + '</div>';
+    });
+  }
+
+  function toggleCutoffEdit(idx) {
+    var form = document.getElementById('cef-' + idx);
+    form.classList.toggle('visible');
+  }
+
+  function deleteCutoff(idx) {
+    if (!confirm('Delete this payroll cutoff date?')) return;
+    jsonp(SCRIPT_URL + '?action=editPayrollCutoff&rowIndex=' + idx + '&delete=true', '_delCutoffCb', function(json) {
+      if (json.status === 'ok') { loadCutoffs(); loadSummary(); }
+      else alert('Error: ' + json.message);
+    });
+  }
+
+  function saveCutoff(idx) {
+    var val = document.getElementById('cev-' + idx).value.trim();
+    var statusEl = document.getElementById('ces-' + idx);
+    if (!val) { statusEl.textContent = 'Enter a date.'; statusEl.className = 'cutoff-status err'; return; }
+    // Ensure seconds if not provided
+    if (val.length === 16) val += ':00';
+    jsonp(SCRIPT_URL + '?action=editPayrollCutoff&rowIndex=' + idx + '&newValue=' + encodeURIComponent(val), '_saveCutoffCb', function(json) {
+      if (json.status === 'ok') {
+        statusEl.textContent = '✓ Saved';
+        statusEl.className   = 'cutoff-status ok';
+        setTimeout(function() { loadCutoffs(); loadSummary(); }, 800);
+      } else {
+        statusEl.textContent = '✕ ' + json.message;
+        statusEl.className   = 'cutoff-status err';
+      }
+    });
+  }
+
+  // ── Projects ──
+  function loadProjects() {
+    jsonp(SCRIPT_URL + '?action=getProjects', '_projListCb', function(json) {
+      var container = document.getElementById('projectsList');
+      if (json.status === 'ok' && json.projects.length > 0) {
+        container.innerHTML = '<div class="projects-list">' +
+          json.projects.map(function(p) {
+            return '<div class="project-item"><span>' + esc(p) + '</span></div>';
+          }).join('') + '</div>';
+      } else {
+        container.innerHTML = '<div style="color:var(--muted);font-size:14px;margin-bottom:14px;">No projects yet.</div>';
+      }
+    });
+  }
+
+  document.getElementById('addProjectBtn').addEventListener('click', function() {
+    var name     = document.getElementById('newProjectInput').value.trim();
+    var statusEl = document.getElementById('addProjectStatus');
+    var btn      = document.getElementById('addProjectBtn');
+    if (!name) { statusEl.textContent = 'Enter a project name.'; statusEl.className = 'add-status err'; return; }
+    btn.disabled = true;
+    statusEl.textContent = '';
+    jsonp(SCRIPT_URL + '?action=addProject&name=' + encodeURIComponent(name), '_addProjCb', function(json) {
+      btn.disabled = false;
+      if (json.status === 'ok') {
+        statusEl.textContent = '✓ "' + name + '" added.';
+        statusEl.className   = 'add-status ok';
+        document.getElementById('newProjectInput').value = '';
+        loadProjects();
+      } else {
+        statusEl.textContent = '✕ ' + (json.message || 'Error');
+        statusEl.className   = 'add-status err';
+      }
+    });
+  });
+
+  // ── Pay period summary ──
   function loadSummary() {
     document.getElementById('periodsContainer').innerHTML =
       '<div class="state-msg"><div class="icon"><span class="spinner"></span></div>Loading…</div>';
-
     jsonp(SCRIPT_URL + '?action=getPayrollSummary', '_summaryCb', function(json) {
       if (json.status !== 'ok') {
         document.getElementById('periodsContainer').innerHTML =
-          '<div class="state-msg"><div class="icon">⚠️</div>Could not load summary. Try refreshing.</div>';
+          '<div class="state-msg"><div class="icon">⚠️</div>Could not load. Try refreshing.</div>';
         return;
       }
       renderSummary(json.summary);
@@ -182,104 +284,36 @@
   }
 
   function renderSummary(periods) {
-    if (!periods || periods.length === 0) {
+    if (!periods || !periods.length) {
       document.getElementById('periodsContainer').innerHTML =
-        '<div class="state-msg"><div class="icon">📋</div>No payroll periods yet. Submit payroll above to create the first one.</div>';
+        '<div class="state-msg"><div class="icon">📋</div>No pay periods yet.</div>';
       return;
     }
-
     var html = '';
     periods.forEach(function(period, i) {
-      var isOpen   = period.cutoff === 'Open';
-      var total    = period.employees.reduce(function(s,e){ return s + e.hours; }, 0);
-      var periodId = 'period-' + i;
-
+      var isOpen = period.cutoff === 'Open';
+      var total  = period.employees.reduce(function(s,e){ return s + e.hours; }, 0);
+      var id     = 'period-' + i;
       html += '<div class="period-card">';
-      html += '<div class="period-header" onclick="togglePeriod(\'' + periodId + '\')">';
+      html += '<div class="period-header" onclick="togglePeriod(\'' + id + '\')">';
       html += '<div><div class="period-label">' + period.label + '</div>';
       html += '<div class="period-cutoff">' + (isOpen ? 'In progress' : 'Submitted ' + period.cutoff) + '</div></div>';
       html += '<span class="period-badge ' + (isOpen ? 'open' : 'closed') + '">' + (isOpen ? 'OPEN' : total.toFixed(1) + ' hrs') + '</span>';
       html += '</div>';
-      html += '<div class="period-body' + (i === 0 ? ' visible' : '') + '" id="' + periodId + '">';
-
+      html += '<div class="period-body' + (i === 0 ? ' visible' : '') + '" id="' + id + '">';
       period.employees.forEach(function(emp) {
-        html += '<div class="emp-row">';
-        html += '<span class="emp-name">' + emp.name + '</span>';
-        html += '<span class="emp-hrs' + (emp.hours === 0 ? ' zero' : '') + '">' + (emp.hours > 0 ? emp.hours.toFixed(1) + ' hrs' : '—') + '</span>';
-        html += '</div>';
+        html += '<div class="emp-row"><span class="emp-name">' + emp.name + '</span>';
+        html += '<span class="emp-hrs' + (emp.hours === 0 ? ' zero' : '') + '">' + (emp.hours > 0 ? emp.hours.toFixed(1) + ' hrs' : '—') + '</span></div>';
       });
-
       html += '<div class="period-total"><span class="period-total-label">Total</span><span class="period-total-val">' + total.toFixed(1) + ' hrs</span></div>';
       html += '</div></div>';
     });
-
     document.getElementById('periodsContainer').innerHTML = html;
   }
 
-  function togglePeriod(id) {
-    var el = document.getElementById(id);
-    el.classList.toggle('visible');
-  }
+  function togglePeriod(id) { document.getElementById(id).classList.toggle('visible'); }
 
-  // ── Load projects list ──
-  function loadProjects() {
-    jsonp(SCRIPT_URL + '?action=getProjects', '_projListCb', function(json) {
-      var container = document.getElementById('projectsList');
-      if (json.status === 'ok') {
-        if (json.projects.length === 0) {
-          container.innerHTML = '<div style="color:var(--muted);font-size:14px;">No projects yet. Add one below.</div>';
-        } else {
-          container.innerHTML = '<div class="projects-list">' +
-            json.projects.map(function(p) {
-              return '<div class="project-item"><span class="project-item-name">' + escHtml(p) + '</span></div>';
-            }).join('') + '</div>';
-        }
-      } else {
-        container.innerHTML = '<div style="color:var(--red);font-size:14px;">Could not load projects.</div>';
-      }
-    });
-  }
-
-  loadProjects();
-
-  // ── Add project ──
-  document.getElementById('addProjectBtn').addEventListener('click', function() {
-    var pin       = document.getElementById('pinInput').value.trim();
-    var name      = document.getElementById('newProjectInput').value.trim();
-    var statusEl  = document.getElementById('addProjectStatus');
-    var btn       = document.getElementById('addProjectBtn');
-
-    if (!pin) {
-      statusEl.textContent = 'Enter your PIN in the field above first.';
-      statusEl.className   = 'add-project-status err';
-      return;
-    }
-    if (!name) {
-      statusEl.textContent = 'Please enter a project name.';
-      statusEl.className   = 'add-project-status err';
-      return;
-    }
-
-    btn.disabled    = true;
-    statusEl.textContent = '';
-
-    jsonp(SCRIPT_URL + '?action=addProject&pin=' + encodeURIComponent(pin) + '&name=' + encodeURIComponent(name), '_addProjCb', function(json) {
-      btn.disabled = false;
-      if (json.status === 'ok') {
-        statusEl.textContent = '✓ "' + name + '" added successfully.';
-        statusEl.className   = 'add-project-status ok';
-        document.getElementById('newProjectInput').value = '';
-        loadProjects();
-      } else {
-        statusEl.textContent = '✕ ' + (json.message || 'Could not add project.');
-        statusEl.className   = 'add-project-status err';
-      }
-    });
-  });
-
-  function escHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   // ── JSONP helper ──
   function jsonp(url, cbName, fn) {

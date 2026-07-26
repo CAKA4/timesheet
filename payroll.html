@@ -112,11 +112,26 @@
   <!-- Mark payroll -->
   <div class="section">
     <div class="section-title">Mark Payroll Submitted</div>
-    <button class="btn-mark" id="markBtn">Submit Payroll Now</button>
+
+    <!-- Submit now -->
+    <button class="btn-mark" id="markBtn">Submit Payroll Now (current time)</button>
     <div class="mark-status" id="markStatus"></div>
 
-    <!-- Payroll cutoff dates -->
-    <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:16px;">
+    <!-- Add a past cutoff date -->
+    <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:16px;">
+      <div class="section-title" style="margin-bottom:10px;">Add Past Cutoff Date</div>
+      <div style="display:flex; gap:8px;">
+        <input class="cutoff-input" id="pastCutoffInput" type="text"
+          placeholder="YYYY-MM-DD HH:MM"
+          style="flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:13px; padding:11px 14px; outline:none; -webkit-appearance:none;">
+        <button class="btn-save-cutoff" id="addPastCutoffBtn" style="padding:11px 16px; font-size:13px;">Add</button>
+      </div>
+      <div style="font-size:11px; color:var(--muted); margin-top:6px;">Example: 2026-05-23 17:30</div>
+      <div class="cutoff-status" id="pastCutoffStatus"></div>
+    </div>
+
+    <!-- Payroll cutoff dates list -->
+    <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:16px;">
       <div class="section-title" style="margin-bottom:10px;">Payroll Cutoff Dates</div>
       <div id="cutoffList"><div style="color:var(--muted);font-size:14px;"><span class="spinner"></span>Loading…</div></div>
     </div>
@@ -169,6 +184,34 @@
       } else {
         statusEl.textContent = '✕ ' + (json.message || 'Error');
         statusEl.className   = 'mark-status err';
+      }
+    });
+  });
+
+  // ── Add past cutoff date ──
+  document.getElementById('addPastCutoffBtn').addEventListener('click', function() {
+    var val      = document.getElementById('pastCutoffInput').value.trim();
+    var statusEl = document.getElementById('pastCutoffStatus');
+    var btn      = document.getElementById('addPastCutoffBtn');
+    if (!val) {
+      statusEl.textContent = 'Please enter a date and time.';
+      statusEl.className   = 'cutoff-status err';
+      return;
+    }
+    // Pad seconds if missing
+    if (val.length === 16) val += ':00';
+    btn.disabled = true;
+    statusEl.textContent = '';
+    jsonp(SCRIPT_URL + '?action=editPayrollCutoff&rowIndex=NEW&newValue=' + encodeURIComponent(val), '_addPastCb', function(json) {
+      btn.disabled = false;
+      if (json.status === 'ok') {
+        statusEl.textContent = '✓ Cutoff date added: ' + val.substring(0,16);
+        statusEl.className   = 'cutoff-status ok';
+        document.getElementById('pastCutoffInput').value = '';
+        loadCutoffs(); loadSummary();
+      } else {
+        statusEl.textContent = '✕ ' + (json.message || 'Error');
+        statusEl.className   = 'cutoff-status err';
       }
     });
   });

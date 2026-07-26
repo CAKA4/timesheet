@@ -295,7 +295,10 @@
       <div class="topbar-title">TIME LOG</div>
       <div class="topbar-sub">Submit your daily hours</div>
     </div>
-    <a href="history.html" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-family:IBM Plex Mono,monospace;font-size:11px;letter-spacing:0.06em;color:var(--label);text-decoration:none;white-space:nowrap;flex-shrink:0;">MY HOURS</a>
+    <div style="display:flex;gap:6px;flex-shrink:0;">
+      <a href="history.html" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-family:IBM Plex Mono,monospace;font-size:11px;letter-spacing:0.06em;color:var(--label);text-decoration:none;white-space:nowrap;-webkit-tap-highlight-color:transparent;">MY HOURS</a>
+      <a href="payroll.html" style="background:var(--green);border:1px solid var(--green);border-radius:8px;padding:7px 12px;font-family:IBM Plex Mono,monospace;font-size:11px;letter-spacing:0.06em;color:#0f1110;font-weight:600;text-decoration:none;white-space:nowrap;-webkit-tap-highlight-color:transparent;">PAYROLL</a>
+    </div>
   </div>
 
   <div class="date-strip" id="dateStrip"></div>
@@ -325,8 +328,10 @@
 
     <div class="field-group">
       <label>Project / Site <span class="required-dot"></span></label>
-      <input type="text" id="project" placeholder="e.g. Smith property" autocomplete="off">
-      <div class="field-error" id="err-project">Please enter a project name.</div>
+      <select id="project">
+        <option value="">— Loading projects… —</option>
+      </select>
+      <div class="field-error" id="err-project">Please select a project.</div>
     </div>
 
     <div class="field-group">
@@ -400,6 +405,27 @@
   // ══════════════════════════════════════════════════
 
   let lastPayload = null;
+
+  // ── Load projects into dropdown ──
+  (function loadProjects() {
+    var old = document.getElementById('jsonp-projects');
+    if (old) old.parentNode.removeChild(old);
+    window._projCb = function(json) {
+      var sel = document.getElementById('project');
+      if (json.status === 'ok' && json.projects.length > 0) {
+        sel.innerHTML = '<option value="">— Select a project —</option>' +
+          json.projects.map(function(p) {
+            return '<option value="' + p.replace(/"/g,'&quot;') + '">' + p + '</option>';
+          }).join('');
+      } else {
+        sel.innerHTML = '<option value="">— No projects yet —</option>';
+      }
+    };
+    var s = document.createElement('script');
+    s.id  = 'jsonp-projects';
+    s.src = SCRIPT_URL + '?action=getProjects&callback=_projCb&_t=' + Date.now();
+    document.head.appendChild(s);
+  })();
 
   // Set today's date
   const fmt = d => d.toLocaleDateString('en-CA');

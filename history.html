@@ -99,6 +99,10 @@
     .popup-hrs { font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--green); font-weight:600; }
     .popup-notes { font-size:14px; color:var(--muted); }
 
+    .popup-edit-btn { margin-top:8px; width:100%; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px; color:var(--muted); font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:0.08em; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+    .popup-edit-btn.active { border-color:var(--green); color:var(--green); }
+    .popup-edit-form { margin-top:10px; display:none; flex-direction:column; gap:8px; border-top:1px solid var(--border); padding-top:10px; }
+    .popup-edit-form.visible { display:flex; }
     .spinner { width:24px; height:24px; border:2px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px; }
     @keyframes spin { to { transform:rotate(360deg); } }
   </style>
@@ -469,13 +473,109 @@
     document.getElementById('popupDate').textContent = dl;
     var html = '';
     entries.forEach(function(row) {
+      var idx = row._idx;
       html += '<div class="popup-entry">';
-      html += '<div class="popup-entry-top"><span class="popup-project">' + esc(row.project) + '</span><span class="popup-hrs">' + row.hours.toFixed(1) + ' hrs</span></div>';
-      if (row.notes && row.notes !== '—') html += '<div class="popup-notes">' + esc(row.notes) + '</div>';
+      // View mode
+      html += '<div id="pview-'+idx+'">';
+      html += '<div class="popup-entry-top"><span class="popup-project">'+esc(row.project)+'</span><span class="popup-hrs">'+row.hours.toFixed(1)+' hrs</span></div>';
+      if (row.notes && row.notes !== '—') html += '<div class="popup-notes">'+esc(row.notes)+'</div>';
+      html += '<button class="popup-edit-btn" onclick="togglePopupEdit('+idx+')">✏️ Edit this entry</button>';
+      html += '</div>';
+      // Edit form (hidden by default)
+      html += '<div class="popup-edit-form" id="peform-'+idx+'">';
+      html += '<div><span class="edit-label">Date</span><input class="edit-input" id="pef-date-'+idx+'" type="date" value="'+row.date+'"></div>';
+      html += '<div><span class="edit-label">Project</span><input class="edit-input" id="pef-proj-'+idx+'" type="text" value="'+esc(row.project)+'"></div>';
+      html += '<div><span class="edit-label">Hours</span><input class="edit-input" id="pef-hrs-'+idx+'" type="number" min="0.5" max="24" step="0.5" value="'+row.hours+'"></div>';
+      html += '<div><span class="edit-label">Notes</span><input class="edit-input" id="pef-notes-'+idx+'" type="text" value="'+(row.notes==='—'?'':esc(row.notes))+'"></div>';
+      html += '<div class="edit-actions"><button class="btn-cancel" onclick="togglePopupEdit('+idx+')">Cancel</button><button class="btn-save" id="pesave-'+idx+'" onclick="savePopupEdit('+idx+')">Save</button></div>';
+      html += '<div class="edit-status" id="pestatus-'+idx+'"></div>';
+      html += '</div>';
       html += '</div>';
     });
     document.getElementById('popupEntries').innerHTML = html;
     popup.classList.add('visible');
+  }
+
+  function togglePopupEdit(idx) {
+    var form = document.getElementById('peform-'+idx);
+    var btn  = document.querySelector('#pview-'+idx+' .popup-edit-btn');
+    if (form.classList.contains('visible')) {
+      form.classList.remove('visible');
+      if (btn) { btn.textContent = '✏️ Edit this entry'; btn.classList.remove('active'); }
+    } else {
+      form.classList.add('visible');
+      if (btn) { btn.textContent = '✕ Cancel edit'; btn.classList.add('active'); }
+    }
+  }
+
+  function savePopupEdit(idx) {
+    var row      = allData[idx];
+    var newDate  = document.getElementById('pef-date-'+idx).value;
+    var newProj  = document.getElementById('pef-proj-'+idx).value.trim();
+    var newHrs   = parseFloat(document.getElementById('pef-hrs-'+idx).value);
+    var newNotes = document.getElementById('pef-notes-'+idx).value.trim() || '—';
+    var statusEl = document.getElementById('pestatus-'+idx);
+    var saveBtn  = document.getElementById('pesave-'+idx);
+
+    if (!newDate || !newProj || isNaN(newHrs) || newHrs <= 0) {
+      statusEl.textContent = 'Please fill in all required fields.';
+      statusEl.className   = 'edit-status err';
+      return;
+    }
+
+    saveBtn.disabled    = true;
+    saveBtn.textContent = 'Saving…';
+    statusEl.textContent = '';
+
+    var existing = document.getElementById('jsonp-edit');
+    if (existing) existing.parentNode.removeChild(existing);
+
+    window._tsEditCallback = function(json) {
+      var el = document.getElementById('jsonp-edit');
+      if (el) el.parentNode.removeChild(el);
+      saveBtn.disabled    = false;
+      saveBtn.textContent = 'Save';
+      if (json.status === 'ok') {
+        // Update local data
+        row.date    = newDate;
+        row.project = newProj;
+        row.hours   = newHrs;
+        row.notes   = newNotes;
+        // Close popup and re-render both views
+        popup.classList.remove('visible');
+        renderList();
+        renderCalendar();
+      } else {
+        statusEl.textContent = 'Save failed. Please try again.';
+        statusEl.className   = 'edit-status err';
+      }
+    };
+
+    var payload = {
+      action:   'editEntry',
+      name:     nameSelect.value,
+      origDate: row.date,
+      origProj: row.project,
+      newDate:  newDate,
+      newProj:  newProj,
+      newHrs:   newHrs,
+      newNotes: newNotes
+    };
+
+    var qs = Object.keys(payload).map(function(k) {
+      return encodeURIComponent(k) + '=' + encodeURIComponent(payload[k]);
+    }).join('&');
+
+    var s  = document.createElement('script');
+    s.id   = 'jsonp-edit';
+    s.src  = SCRIPT_URL + '?' + qs + '&callback=_tsEditCallback&_t=' + Date.now();
+    s.onerror = function() {
+      saveBtn.disabled    = false;
+      saveBtn.textContent = 'Save';
+      statusEl.textContent = 'Connection error. Try again.';
+      statusEl.className   = 'edit-status err';
+    };
+    document.head.appendChild(s);
   }
 
   function esc(s) {

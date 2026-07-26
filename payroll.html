@@ -92,6 +92,16 @@
 
     .state-msg { text-align:center; padding:48px 24px; color:var(--muted); font-size:15px; line-height:1.6; }
     .state-msg .icon { font-size:32px; margin-bottom:10px; }
+    /* Submission picker */
+    .sub-picker { display:flex; flex-direction:column; gap:6px; max-height:280px; overflow-y:auto; }
+    .sub-row { display:flex; align-items:center; gap:10px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; transition:border-color 0.12s; }
+    .sub-row:active, .sub-row.selected { border-color:var(--green); background:var(--green-bg); }
+    .sub-ts { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--label); white-space:nowrap; }
+    .sub-detail { flex:1; min-width:0; }
+    .sub-emp { font-size:13px; font-weight:500; color:var(--text); }
+    .sub-proj { font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .btn-add-cutoff { width:100%; margin-top:10px; background:var(--green); color:#0f1110; border:none; border-radius:8px; padding:12px; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; display:none; }
+    .btn-add-cutoff.visible { display:block; }
     .spinner { width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin 0.8s linear infinite; display:inline-block; vertical-align:middle; margin-right:6px; }
     @keyframes spin { to { transform:rotate(360deg); } }
   </style>
@@ -117,17 +127,14 @@
     <button class="btn-mark" id="markBtn">Submit Payroll Now (current time)</button>
     <div class="mark-status" id="markStatus"></div>
 
-    <!-- Add a past cutoff date -->
+    <!-- Add a past cutoff date — pick from submission list -->
     <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:16px;">
       <div class="section-title" style="margin-bottom:10px;">Add Past Cutoff Date</div>
-      <div style="display:flex; gap:8px;">
-        <input class="cutoff-input" id="pastCutoffInput" type="text"
-          placeholder="YYYY-MM-DD HH:MM"
-          style="flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:13px; padding:11px 14px; outline:none; -webkit-appearance:none;">
-        <button class="btn-save-cutoff" id="addPastCutoffBtn" style="padding:11px 16px; font-size:13px;">Add</button>
+      <div style="font-size:13px; color:var(--muted); margin-bottom:10px;">Select a submission — the cutoff will be set to that exact moment.</div>
+      <div id="submissionPicker">
+        <div style="color:var(--muted);font-size:14px;"><span class="spinner"></span>Loading submissions…</div>
       </div>
-      <div style="font-size:11px; color:var(--muted); margin-top:6px;">Example: 2026-05-23 17:30</div>
-      <div class="cutoff-status" id="pastCutoffStatus"></div>
+      <div class="cutoff-status" id="pastCutoffStatus" style="margin-top:8px;"></div>
     </div>
 
     <!-- Payroll cutoff dates list -->
@@ -165,6 +172,7 @@
   loadSummary();
   loadCutoffs();
   loadProjects();
+  loadSubmissionPicker();
 
   // ── Mark payroll ──
   document.getElementById('markBtn').addEventListener('click', function() {
@@ -188,33 +196,68 @@
     });
   });
 
-  // ── Add past cutoff date ──
-  document.getElementById('addPastCutoffBtn').addEventListener('click', function() {
-    var val      = document.getElementById('pastCutoffInput').value.trim();
-    var statusEl = document.getElementById('pastCutoffStatus');
-    var btn      = document.getElementById('addPastCutoffBtn');
-    if (!val) {
-      statusEl.textContent = 'Please enter a date and time.';
-      statusEl.className   = 'cutoff-status err';
-      return;
-    }
-    // Pad seconds if missing
-    if (val.length === 16) val += ':00';
-    btn.disabled = true;
-    statusEl.textContent = '';
-    jsonp(SCRIPT_URL + '?action=editPayrollCutoff&rowIndex=NEW&newValue=' + encodeURIComponent(val), '_addPastCb', function(json) {
-      btn.disabled = false;
-      if (json.status === 'ok') {
-        statusEl.textContent = '✓ Cutoff date added: ' + val.substring(0,16);
-        statusEl.className   = 'cutoff-status ok';
-        document.getElementById('pastCutoffInput').value = '';
-        loadCutoffs(); loadSummary();
-      } else {
-        statusEl.textContent = '✕ ' + (json.message || 'Error');
-        statusEl.className   = 'cutoff-status err';
+  // ── Submission picker for past cutoff ──
+  var selectedCutoffTs = null;
+
+  function loadSubmissionPicker() {
+    jsonp(SCRIPT_URL + '?action=getSubmissions', '_subsCb', function(json) {
+      var container = document.getElementById('submissionPicker');
+      if (json.status !== 'ok' || !json.rows.length) {
+        container.innerHTML = '<div style="color:var(--muted);font-size:14px;">No submissions found.</div>';
+        return;
       }
+      var html = '<div class="sub-picker" id="subPickerList">';
+      json.rows.forEach(function(row) {
+        html += '<div class="sub-row" data-ts="' + row.ts + '">' +
+          '<div class="sub-detail">' +
+          '<div class="sub-emp">' + esc(row.emp) + ' &nbsp;·&nbsp; ' + row.date + '</div>' +
+          '<div class="sub-proj">' + esc(row.project) + ' — ' + row.hours.toFixed(1) + ' hrs</div>' +
+          '</div>' +
+          '<div class="sub-ts">' + row.ts.substring(11,16) + '</div>' +
+          '</div>';
+      });
+      html += '</div>';
+      html += '<button class="btn-add-cutoff" id="addSelectedCutoffBtn">Set as Payroll Cutoff</button>';
+      container.innerHTML = html;
+
+      // Tap to select
+      document.querySelectorAll('.sub-row').forEach(function(row) {
+        row.addEventListener('click', function() {
+          document.querySelectorAll('.sub-row').forEach(function(r) { r.classList.remove('selected'); });
+          this.classList.add('selected');
+          selectedCutoffTs = this.getAttribute('data-ts');
+          document.getElementById('addSelectedCutoffBtn').classList.add('visible');
+        });
+      });
+
+      // Confirm add
+      document.getElementById('addSelectedCutoffBtn').addEventListener('click', function() {
+        if (!selectedCutoffTs) return;
+        var statusEl = document.getElementById('pastCutoffStatus');
+        var btn      = this;
+        btn.disabled = true;
+        btn.textContent = 'Adding…';
+        statusEl.textContent = '';
+        jsonp(SCRIPT_URL + '?action=editPayrollCutoff&rowIndex=NEW&newValue=' + encodeURIComponent(selectedCutoffTs), '_addPastCb', function(json) {
+          btn.disabled    = false;
+          btn.textContent = 'Set as Payroll Cutoff';
+          if (json.status === 'ok') {
+            statusEl.textContent = '✓ Cutoff added: ' + selectedCutoffTs.substring(0,16);
+            statusEl.className   = 'cutoff-status ok';
+            selectedCutoffTs = null;
+            document.getElementById('addSelectedCutoffBtn').classList.remove('visible');
+            document.querySelectorAll('.sub-row').forEach(function(r) { r.classList.remove('selected'); });
+            loadCutoffs(); loadSummary();
+          } else {
+            statusEl.textContent = '✕ ' + (json.message || 'Error');
+            statusEl.className   = 'cutoff-status err';
+          }
+        });
+      });
     });
-  });
+  }
+
+  loadSubmissionPicker();
 
   // ── Load + render cutoff dates ──
   function loadCutoffs() {
